@@ -1,0 +1,71 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - network_publish
+
+  publish_BTC:
+    image: python:latest
+    container_name: publish_BTC
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./services/Publish:/app
+    working_dir: /app
+    command: >
+        sh -c "pip install -r requirements.txt && sleep 10 &&
+        python Publish.py"
+    networks:
+      - network_publish
+
+  consumer_BTC:
+    image: python:latest
+    container_name: consumer_BTC
+    depends_on:
+      - mongodb
+    volumes:
+      - ./services/Consumer:/app
+    working_dir: /app
+    command: >
+        sh -c "pip install -r requirements.txt && sleep 10 &&
+        python Consumer.py"
+    networks:
+      - network_publish
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./services/Consumer/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    networks:
+      - network_publish
+
+#   mariadb:
+#     image: mariadb:latest
+#     container_name: mariadb
+#     environment:
+#       MYSQL_ROOT_PASSWORD: rootpassword
+#       MYSQL_DATABASE: yourdb
+#       MYSQL_USER: youruser
+#       MYSQL_PASSWORD: yourpassword
+#     ports:
+#       - "3306:3306"
+#     volumes:
+#       - mariadb_data:/var/lib/mysql
+
+networks:
+  network_publish:
+  
+volumes:
+  mongo_data:
+  # mariadb_data:

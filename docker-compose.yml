@@ -6,7 +6,7 @@ services:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - network_publish
+      - network_internal
 
   publish_BTC:
     image: python:latest
@@ -20,7 +20,7 @@ services:
         sh -c "pip install -r requirements.txt && sleep 10 &&
         python Publish.py"
     networks:
-      - network_publish
+      - network_internal
 
   consumer_BTC:
     image: python:latest
@@ -34,7 +34,7 @@ services:
         sh -c "pip install -r requirements.txt && sleep 10 &&
         python Consumer.py"
     networks:
-      - network_publish
+      - network_internal
 
   mongodb:
     image: mongo:latest
@@ -48,23 +48,40 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
     networks:
-      - network_publish
+      - network_internal
 
-#   mariadb:
-#     image: mariadb:latest
-#     container_name: mariadb
-#     environment:
-#       MYSQL_ROOT_PASSWORD: rootpassword
-#       MYSQL_DATABASE: yourdb
-#       MYSQL_USER: youruser
-#       MYSQL_PASSWORD: yourpassword
-#     ports:
-#       - "3306:3306"
-#     volumes:
-#       - mariadb_data:/var/lib/mysql
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: BTC
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    volumes:
+      # - mariadb_data:/var/lib/mysql
+      - ./services/Transfer/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - network_internal
+
+  transfer:
+    image: python:latest
+    container_name: transfer
+    depends_on:
+      - mariadb
+    volumes:
+      - ./services/Transfer:/app
+    working_dir: /app
+    command: >
+        sh -c "pip install -r requirements.txt &&
+        python Transfer.py"
+    networks:
+      - network_internal
 
 networks:
-  network_publish:
+  network_internal:
   
 volumes:
   mongo_data:

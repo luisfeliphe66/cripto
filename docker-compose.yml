@@ -36,6 +36,20 @@ services:
     networks:
       - network_internal
 
+  transfer_maria:
+    image: python:3.10
+    container_name: transfer_maria
+    volumes:
+      - ./services/Transfer:/app
+    working_dir: /app
+    command: >
+      sh -c "pip install -r requirements.txt && sleep 10 &&
+      python TransferMaria.py"
+    depends_on:
+      - mongodb
+    networks:
+      - network_internal
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -61,8 +75,9 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # - mariadb_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
       - ./services/Transfer/init.sql:/docker-entrypoint-initdb.d/init.sql
+
     networks:
       - network_internal
 
@@ -85,4 +100,4 @@ networks:
   
 volumes:
   mongo_data:
-  # mariadb_data:
+  mariadb_data:

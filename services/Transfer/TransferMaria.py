@@ -36,6 +36,8 @@ def insert_into_mariadb(mariadb_connection, data):
         cursor.executemany(sql_insert_query, data)
         mariadb_connection.commit()
         print(f"{cursor.rowcount} registros foram inseridos.")
+        print("Limpando registro Mongodb.")
+        truncate_data_base()
     except Error as e:
         print(f"Erro ao inserir no MariaDB: {e}")
         mariadb_connection.rollback()
@@ -77,7 +79,11 @@ def convert_mongodb_data(record):
     # Outros tipos podem ser retornados diretamente (int, float, etc.)
     return record
 
-
+def truncate_data_base():
+    mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/")
+    mongo_db = mongo_client["BTCBRL"]
+    mongo_collection = mongo_db["BTC"]
+    mongo_collection.delete_many({})
 
 if __name__ == "__main__":
     main()
